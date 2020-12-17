@@ -7,38 +7,33 @@ import java.util.List;
 public class Day03 extends Day {
 
     public Object part1(List<String> input) {
-        boolean[][] treeMap = buildTreeMap(input);
-        return countTrees(treeMap, 3, 1);
+        return treeCounter(3,1, input);
     }
 
-    private int countTrees(boolean[][] treeMap, int xStep, int yStep) {
+    private long treeCounter(int right, int down, List<String> input) {
         int counter = 0;
-        int y = 0;
-        int x = 0;
-        while (y < treeMap[0].length) {
-            int realX = x % treeMap.length;
-            if (treeMap[realX][y]) {
+        int hPos = right;
+        for (int i = down; i < input.size(); i += down) {
+            String currentLine = input.get(i);
+            if (hPos >= currentLine.length()) {
+                hPos -= currentLine.length();
+            }
+            if (currentLine.charAt(hPos) == '#') {
                 counter++;
             }
-            y += yStep;
-            x += xStep;
+            hPos += right;
         }
         return counter;
     }
 
     public Object part2(List<String> input) {
-        boolean[][] treeMap = buildTreeMap(input);
-        return ((long) countTrees(treeMap, 1, 1) * countTrees(treeMap, 3, 1)) * countTrees(treeMap, 5, 1) * countTrees(treeMap, 7, 1) * countTrees(treeMap, 1, 2);
+        long a = treeCounter(1, 1, input);
+        long b = treeCounter(3, 1, input);
+        long c = treeCounter(5, 1, input);
+        long d = treeCounter(7, 1, input);
+        long e = treeCounter(1, 2, input);
+
+        return a*b*c*d*e;
     }
 
-    private boolean[][] buildTreeMap(List<String> input) {
-        boolean[][] isTree = new boolean[input.get(0).length()][input.size()];
-        for (int y = 0; y < input.size(); y++) {
-            String currentLine = input.get(y);
-            for (int x = 0; x < currentLine.length(); x++) {
-                isTree[x][y] = currentLine.charAt(x) == '#';
-            }
-        }
-        return isTree;
-    }
 }

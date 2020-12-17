@@ -2,81 +2,73 @@ package de.beachboys.aoc2020;
 
 import de.beachboys.Day;
 
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.TreeSet;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Day10 extends Day {
 
     public Object part1(List<String> input) {
-        TreeSet<Long> set = input.stream().map(Long::valueOf).collect(Collectors.toCollection(TreeSet::new));
-        long numberOfJumpsByOne = 0L;
-        long numberOfJumpsByThree = 0L;
-        long deviceJolt = set.last() + 3;
-        set.add(deviceJolt);
-
-        long currentJoltValue = 0L;
-        while (!set.isEmpty()) {
-            @SuppressWarnings("ConstantConditions") long adapterJolt = set.pollFirst();
-            if (adapterJolt - 1 == currentJoltValue) {
-                numberOfJumpsByOne++;
-            } else if (adapterJolt - 3 == currentJoltValue) {
-                numberOfJumpsByThree++;
+        List<Integer> intList = input.stream().map(Integer::valueOf).collect(Collectors.toList());
+        intList.add(0);
+        intList.sort(null);
+        int one = 0;
+        int two = 0;
+        int three = 1;
+        for (int i = 0; i < intList.size() - 1; i++) {
+            int dif = intList.get(i + 1)-intList.get(i);
+            if (dif == 1) {
+                one++;
+            } else if (dif == 2) {
+                two++;
+            } else if (dif == 3) {
+                three++;
             }
-            currentJoltValue = adapterJolt;
         }
+        return one * three;
+    }
 
-        return numberOfJumpsByOne * numberOfJumpsByThree;
+    private long recursion(Map<Integer, List<Integer>> treeMap, Map<Integer, Long> routMap, int current) {
+        if (routMap.containsKey(current)) {
+            return routMap.get(current);
+        }
+        long sum = 0;
+        for (int i : treeMap.get(current)) {
+            sum += recursion(treeMap, routMap, i);
+        }
+        routMap.put(current, sum);
+        return sum;
     }
 
     public Object part2(List<String> input) {
-        TreeSet<Long> set = input.stream().map(Long::valueOf).collect(Collectors.toCollection(TreeSet::new));
-        set.add(0L);
-
-        List<List<Long>> blocks = buildAdapterBlocks(set);
-
-        long number = 1L;
-        for (List<Long> block : blocks) {
-            long counter = 1L;
-            int size = block.size();
-            for (int startPosition = 0; startPosition < size - 1; startPosition++) {
-                for (int stepSize = 2; stepSize < size; stepSize++) {
-                    counter += getPossibilitiesForStartPositionAndStepSize(block, startPosition, stepSize);
+        List<Integer> intList = input.stream().map(Integer::valueOf).collect(Collectors.toList());
+        intList.add(0);
+        intList.sort(null);
+        int myJoltage = intList.get(intList.size() - 1) + 3;
+        intList.add(myJoltage);
+        Map<Integer, List<Integer>> treeMap = new HashMap<>();
+        Map<Integer, Long> routMap = new HashMap<>();
+        for (int i = 0; i < intList.size() - 1; i++) {
+            List<Integer> list = new LinkedList<>();
+            list.add(intList.get(i + 1));
+            if (i + 2 < intList.size()) {
+                if (intList.get(i + 2) - intList.get(i) <= 3) {
+                    list.add(intList.get(i + 2));
                 }
             }
-            number *=counter;
-        }
-        return number;
-    }
-
-    private long getPossibilitiesForStartPositionAndStepSize(List<Long> block, int startPosition, int stepSize) {
-        long possibleSteps = 0L;
-        int currentPosition = startPosition;
-        while (currentPosition + stepSize < block.size()) {
-            if (block.get(currentPosition + stepSize) - block.get(currentPosition) <= 3) {
-                possibleSteps++;
+            if (i + 3 < intList.size()) {
+                if (intList.get(i + 3) - intList.get(i) <= 3) {
+                    list.add(intList.get(i + 3));
+                }
             }
-            currentPosition = currentPosition + stepSize;
+            treeMap.put(intList.get(i), list);
         }
-        return (long) Math.pow(2, possibleSteps - 1);
-    }
+        treeMap.put(myJoltage, new LinkedList<>());
+        routMap.put(myJoltage, (long) 1);
 
-    private List<List<Long>> buildAdapterBlocks(TreeSet<Long> set) {
-        List<List<Long>> blocks = new ArrayList<>();
-        List<Long> block = new ArrayList<>();
-        long currentJoltValue = 0L;
-        while (!set.isEmpty()) {
-            @SuppressWarnings("ConstantConditions") long adapterJolt = set.pollFirst();
-            if (adapterJolt - 3 == currentJoltValue) {
-                blocks.add(block);
-                block = new ArrayList<>();
-            }
-            block.add(adapterJolt);
-            currentJoltValue = adapterJolt;
-        }
-        blocks.add(block);
-        return blocks;
+        return recursion(treeMap, routMap, 0);
     }
 
 }

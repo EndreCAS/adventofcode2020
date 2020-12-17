@@ -1,72 +1,79 @@
 package de.beachboys.aoc2020;
 
 import de.beachboys.Day;
-import org.javatuples.Pair;
 
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 public class Day08 extends Day {
 
     public Object part1(List<String> input) {
-        return runProgram(input).getValue1();
+        int accSum = 0;
+        int i = 0;
+        List<Integer> visitedInstructions = new LinkedList<>();
+        while (!visitedInstructions.contains(i)) {
+            visitedInstructions.add(i);
+            String line = input.get(i);
+            String[] kv = line.split("\\s");
+            String ins = kv[0];
+            int val = Integer.parseInt(kv[1]);
+
+            switch (ins) {
+                case "acc":
+                    accSum += val;
+                    i++;
+                    break;
+                case "jmp":
+                    i += val;
+                    break;
+                case "nop":
+                    i++;
+                    break;
+            }
+        }
+
+        return accSum;
     }
 
     public Object part2(List<String> input) {
-        List<String> opStringList = new ArrayList<>(input);
-        for (int i = 0; i < opStringList.size(); i++) {
-            String original = opStringList.get(i);
-            Pair<String, Integer> op = getOp(original);
-            if ("jmp".equals(op.getValue0()) || "nop".equals(op.getValue0())) {
-                if ("jmp".equals(op.getValue0())) {
-                    opStringList.set(i, original.replace("jmp", "nop"));
-                } else {
-                    opStringList.set(i, original.replace("nop", "jmp"));
+        for (int j = -1; j < input.size(); j++) {
+            int accSum = 0;
+            int i = 0;
+            List<Integer> visitedInstructions = new LinkedList<>();
+            while (!visitedInstructions.contains(i)) {
+                if (i >= input.size()) {
+                    return accSum;
                 }
-                Pair<Boolean, Integer> programResult = runProgram(opStringList);
-                if (programResult.getValue0()) {
-                    return programResult.getValue1();
+                visitedInstructions.add(i);
+                String line = input.get(i);
+                String[] kv = line.split("\\s");
+                String instruction = kv[0];
+                int value = Integer.parseInt(kv[1]);
+
+                switch (instruction) {
+                    case "acc":
+                        accSum += value;
+                        i++;
+                        break;
+                    case "jmp":
+                        if (i == j) {
+                            i++;
+                        } else {
+                            i += value;
+                        }
+                        break;
+                    case "nop":
+                        if (i == j) {
+                            i += value;
+                        } else {
+                            i++;
+                        }
+                        break;
                 }
-                opStringList.set(i, original);
             }
         }
-        return -1;
-    }
 
-    private Pair<Boolean, Integer> runProgram(List<String> input) {
-        int acc = 0;
-        Set<Integer> doneOpIndexes = new HashSet<>();
-        int i = 0;
-        while (true) {
-            if (i >= input.size()) {
-                return Pair.with(true, acc);
-            }
-            if (doneOpIndexes.contains(i)) {
-                return Pair.with(false, acc);
-            }
-            doneOpIndexes.add(i);
-
-            Pair<String, Integer> op = getOp(input.get(i));
-            switch (op.getValue0()) {
-                case "acc":
-                    acc += op.getValue1();
-                    i += 1;
-                    break;
-                case "jmp":
-                    i += op.getValue1();
-                    break;
-                case "nop":
-                    i += 1;
-                    break;
-            }
-        }
-    }
-
-    private Pair<String, Integer> getOp(String opAsString) {
-        String[] splitOp = opAsString.split(" ");
-        return Pair.with(splitOp[0], Integer.valueOf(splitOp[1]));
+        return 0;
     }
 
 }

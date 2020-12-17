@@ -1,83 +1,76 @@
 package de.beachboys.aoc2020;
 
 import de.beachboys.Day;
-import de.beachboys.Util;
-import org.javatuples.Pair;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Day07 extends Day {
 
-    private final Map<String, List<Pair<Long, String>>> bagRelations = new HashMap<>();
+    private String myBag = "shiny gold";
+    private Map<String, Map<String, Integer>> bagRules;
+
+    private Map<String, Map<String, Integer>> processRules(List<String> rules) {
+        Map<String, Map<String, Integer>> bagRules = new HashMap<>();
+
+        for (String rule : rules) {
+            String[] kv = rule.substring(0, rule.length() - 1).split(" contain "); //remove '.' and split
+            String key = kv[0].substring(0, kv[0].length() - 5); //remove bags from key
+
+            if (kv[1].equals("no other bags")) {    // handle the special case
+                bagRules.put(key, new HashMap<>());
+                continue;
+            }
+
+            String[] subRules = kv[1].split(", ");
+            Map<String, Integer> map = new HashMap<>();
+            for (String subRule : subRules) {
+                String[] words = subRule.split("\\s");
+                map.put(words[1] + " " + words[2], Integer.parseInt(words[0]));
+            }
+            bagRules.put(key, map);
+        }
+
+        return bagRules;
+    }
 
     public Object part1(List<String> input) {
-        buildBagRelations(input);
 
-        Set<String> possibleBagColors = new HashSet<>();
-        Set<String> checkedBagColors = new HashSet<>();
-        Set<String> uncheckedBagColors = new HashSet<>(List.of("shiny gold"));
-
-        while (!uncheckedBagColors.isEmpty()) {
-            String bagColorToCheck = uncheckedBagColors.stream().findFirst().orElseThrow();
-            for (Map.Entry<String, List<Pair<Long, String>>> bagRelation : bagRelations.entrySet()) {
-                bagRelation.getValue().forEach(innerBag -> {
-                    String innerBagColor = innerBag.getValue1();
-                    if (innerBagColor.equals(bagColorToCheck)) {
-                        String newOuterBagColor = bagRelation.getKey();
-                        if (!checkedBagColors.contains(newOuterBagColor)) {
-                            possibleBagColors.add(newOuterBagColor);
-                            uncheckedBagColors.add(newOuterBagColor);
-                        }
-                    }
-                });
+        bagRules = processRules(input);
+        Set<String> resultSet = new TreeSet<>();
+        Set<String> setToProcess = new TreeSet<>();
+        setToProcess.add(myBag);
+        while (!setToProcess.isEmpty()) {
+            String id = setToProcess.iterator().next();
+            for (String key : bagRules.keySet()) {
+                if (bagRules.get(key).containsKey(id)) {
+                    setToProcess.add(key);
+                    resultSet.add(key);
+                }
             }
-            checkedBagColors.add(bagColorToCheck);
-            uncheckedBagColors.remove(bagColorToCheck);
+            setToProcess.remove(id);
         }
-        return possibleBagColors.size();
+
+        return resultSet.size();
+    }
+
+    private int recursion(String currentKey) {
+        Map<String, Integer> map = bagRules.get(currentKey);
+        if (map.isEmpty()) {
+            return 0;
+        }
+        int sum = 0;
+        for (String key : map.keySet()) {
+            sum = map.get(key) + map.get(key) * recursion(key) + sum;
+        }
+        return sum;
     }
 
     public Object part2(List<String> input) {
-        buildBagRelations(input);
+        int countBags = 0;
+        bagRules = processRules(input);
+        countBags += recursion(myBag);
 
-        Map<String, Long> bagsToCheck = new HashMap<>();
-        bagsToCheck.put("shiny gold", 1L);
-        // start with -1 because the outer shiny gold one does not count
-        long counter = -1;
-
-        while (!bagsToCheck.isEmpty()) {
-            String bagColorToCheck = bagsToCheck.keySet().stream().findFirst().orElseThrow();
-            List<Pair<Long, String>> innerBags = bagRelations.get(bagColorToCheck);
-            for (Pair<Long, String> innerBag : innerBags) {
-                long newInnerBagCount = innerBag.getValue0() * bagsToCheck.get(bagColorToCheck);
-                Long existingInnerBagCount = bagsToCheck.getOrDefault(innerBag.getValue1(), 0L);
-                bagsToCheck.put(innerBag.getValue1(), existingInnerBagCount + newInnerBagCount);
-            }
-            counter += bagsToCheck.get(bagColorToCheck);
-            bagsToCheck.remove(bagColorToCheck);
-        }
-        return counter;
+        return countBags;
     }
 
-    private void buildBagRelations(List<String> input) {
-        for (String relationString : input) {
-            String[] relationOuterAndInner = relationString.split(" contain ");
-            List<String> innerBagsStringList = Util.parseToList(relationOuterAndInner[1], ", ");
-            List<Pair<Long, String>> innerBags = innerBagsStringList.stream().map(this::buildBagCountAndColor).filter(p -> p.getValue0() != 0L).collect(Collectors.toList());
-            bagRelations.put(getColor(relationOuterAndInner[0]), innerBags);
-        }
-    }
-
-    private Pair<Long, String> buildBagCountAndColor(String bagString) {
-        String[] splitBag = bagString.split(" ", 2);
-        long count = Long.parseLong(splitBag[0].replace("no", "0"));
-        String color = getColor(splitBag[1]);
-        return Pair.with(count, color);
-    }
-
-    private String getColor(String bagWithColor) {
-        // works for "bag", "bags" and "bags."
-        return bagWithColor.substring(0, bagWithColor.indexOf(" bag"));
-    }
 }

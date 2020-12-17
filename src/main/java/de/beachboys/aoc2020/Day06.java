@@ -6,45 +6,60 @@ import java.util.*;
 
 public class Day06 extends Day {
 
-    private enum Mode {
-        AND, OR
+    private Set<Character> stringToSet(String input) {
+        Set<Character> set = new TreeSet<>();
+        for (char c : input.toCharArray()) {
+            set.add(c);
+        }
+        return set;
+    }
+
+    private int sizeOfIntersection(Collection<String> collection) {
+        Set<Character> base = stringToSet("abcdefghijklmnopqrstuvwxzy");
+        for(String line : collection) {
+            base.retainAll(stringToSet(line));
+        }
+        return base.size();
+    }
+
+    private int sizeOfUnion(Collection<String> collection) {
+        Set<Character> base = new TreeSet<>();
+        for (String line : collection) {
+            base.addAll(stringToSet(line));
+        }
+        return base.size();
+    }
+
+    private List<List<String>> groupInput(List<String> input) {
+        List<List<String>> listOfGroups = new LinkedList<>();
+        List<String> group = new LinkedList<>();
+        for (int i = 0; i < input.size(); i++) {
+            String line = input.get(i);
+            if (line.length() != 0) {
+                group.add(line);
+            }
+            if (line.length() == 0 || i == input.size()-1) {
+                listOfGroups.add(group);
+                group = new LinkedList<>();
+            }
+        }
+        return listOfGroups;
     }
 
     public Object part1(List<String> input) {
-        return getSumOfAnsweredGroupQuestions(input, Mode.OR);
+        int sum = 0;
+        for (List<String> group : groupInput(input)) {
+            sum += sizeOfUnion(group);
+        }
+        return sum;
     }
 
     public Object part2(List<String> input) {
-        return getSumOfAnsweredGroupQuestions(input, Mode.AND);
-    }
-
-    private int getSumOfAnsweredGroupQuestions(List<String> input, Mode mode) {
-        List<Set<Integer>> groups = buildGroupList(input, mode);
-        return groups.stream().mapToInt(Set::size).sum();
-    }
-
-    private List<Set<Integer>> buildGroupList(List<String> input, Mode mode) {
-        List<Set<Integer>> groups = new ArrayList<>();
-        Set<Integer> currentGroup = new HashSet<>();
-        boolean isFirstLineOfGroup = true;
-        for (String line : input) {
-            if (line.isBlank()) {
-                groups.add(currentGroup);
-                currentGroup = new HashSet<>();
-                isFirstLineOfGroup = true;
-            } else {
-                Set<Integer> currentPerson = new HashSet<>();
-                line.chars().forEach(currentPerson::add);
-                if (isFirstLineOfGroup || mode == Mode.OR) {
-                    isFirstLineOfGroup = false;
-                    currentGroup.addAll(currentPerson);
-                } else {
-                    currentGroup.retainAll(currentPerson);
-                }
-            }
+        int sum = 0;
+        for (List<String> group : groupInput(input)) {
+            sum += sizeOfIntersection(group);
         }
-        groups.add(currentGroup);
-        return groups;
+        return sum;
     }
 
 }

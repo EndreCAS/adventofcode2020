@@ -1,135 +1,123 @@
 package de.beachboys.aoc2020;
 
 import de.beachboys.Day;
-import org.javatuples.Pair;
 
 import java.util.List;
 
 public class Day12 extends Day {
 
-    private enum Direction {
-        NORTH, SOUTH, EAST, WEST
-    }
-
+    // E:0+, S:1+, W:2-, N:3-
     public Object part1(List<String> input) {
-        Pair<Long, Long>  pos = Pair.with(0L, 0L);
-        Direction curDir = Direction.EAST;
-        for (String command : input) {
-            String op = command.substring(0, 1);
-            int intValue = Integer.parseInt(command.substring(1));
-            switch (op) {
-                case "N":
-                    pos = pos.setAt1(pos.getValue1() - intValue);
+        int EW = 0;
+        int SN = 0;
+        int facing = 0;
+        for (String s : input) {
+            int value = Integer.parseInt(s.substring(1));
+            switch (s.charAt(0)) {
+                case 'S':
+                    SN += value;
                     break;
-                case "S":
-                    pos = pos.setAt1(pos.getValue1() + intValue);
+                case 'N':
+                    SN -= value;
                     break;
-                case "E":
-                    pos = pos.setAt0(pos.getValue0() + intValue);
+                case 'E':
+                    EW += value;
                     break;
-                case "W":
-                    pos = pos.setAt0(pos.getValue0() - intValue);
+                case 'W':
+                    EW -= value;
                     break;
-                case "L":
-                    curDir = turnShip(true, curDir, intValue / 90);
+                case 'L':
+                    facing = (facing - value / 90) % 4;
                     break;
-                case "R":
-                    curDir = turnShip(false, curDir, intValue / 90);
+                case 'R':
+                    facing = (facing + value / 90) % 4;
                     break;
-                case "F":
-                    pos = moveInDirection(pos, curDir, intValue);
+                case 'F':
+                    switch (facing) {
+                        case 0:
+                            EW += value;
+                            break;
+                        case 1:
+                        case -3:
+                            SN += value;
+                            break;
+                        case 2:
+                        case -2:
+                            EW -= value;
+                            break;
+                        case 3:
+                        case -1:
+                            SN -= value;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                default:
                     break;
             }
         }
-        return Math.abs(pos.getValue0()) + Math.abs(pos.getValue1());
+        return Math.abs(EW) + Math.abs(SN);
     }
 
     public Object part2(List<String> input) {
-        Pair<Long, Long>  pos = Pair.with(0L, 0L);
-        Pair<Long, Long>  wayPoint = Pair.with(10L, -1L);
-        for (String command : input) {
-            String op = command.substring(0, 1);
-            int intValue = Integer.parseInt(command.substring(1));
-            switch (op) {
-                case "N":
-                    wayPoint = wayPoint.setAt1(wayPoint.getValue1() - intValue);
+        int wpEW = 10;
+        int wpSN = -1;
+        int EW = 0;
+        int SN = 0;
+        int temp;
+        for (String s : input) {
+            int value = Integer.parseInt(s.substring(1));
+            switch (s.charAt(0)) {
+                case 'N':
+                    wpSN -= value;
                     break;
-                case "S":
-                    wayPoint = wayPoint.setAt1(wayPoint.getValue1() + intValue);
+                case 'S':
+                    wpSN += value;
                     break;
-                case "E":
-                    wayPoint = wayPoint.setAt0(wayPoint.getValue0() + intValue);
+                case 'E':
+                    wpEW += value;
                     break;
-                case "W":
-                    wayPoint = wayPoint.setAt0(wayPoint.getValue0() - intValue);
+                case 'W':
+                    wpEW -= value;
                     break;
-                case "L":
-                    wayPoint = turnWayPoint(true, wayPoint, intValue / 90);
+                case 'F':
+                    EW += value * wpEW;
+                    SN += value * wpSN;
                     break;
-                case "R":
-                    wayPoint = turnWayPoint(false, wayPoint, intValue / 90);
+                case 'L':
+                    value = 360 - value;
+                case 'R':
+                    int turn = (value / 90) % 4;
+                    switch (turn) {
+                        case 0:
+                            break;
+                        case 1:
+                        case -3:
+                            temp = wpEW;
+                            wpEW = -1 * wpSN;
+                            wpSN = temp;
+                            break;
+                        case 2:
+                        case -2:
+                            wpEW = -1 * wpEW;
+                            wpSN = -1 * wpSN;
+                            break;
+                        case 3:
+                        case -1:
+                            temp = wpEW;
+                            wpEW = wpSN;
+                            wpSN = -1 * temp;
+                            break;
+                        default:
+                            break;
+                    }
                     break;
-                case "F":
-                    pos = Pair.with(pos.getValue0() + intValue * wayPoint.getValue0(),  pos.getValue1() + intValue * wayPoint.getValue1());
+                default:
                     break;
             }
         }
-        return Math.abs(pos.getValue0()) + Math.abs(pos.getValue1());
-    }
-
-    private Direction turnShip(boolean turnLeft, Direction currentDirection, int turnCount) {
-        Direction newDirection = currentDirection;
-        for (int i = 0; i < turnCount; i++) {
-            newDirection = turnShip(turnLeft, newDirection);
-        }
-        return newDirection;
-    }
-
-    private Pair<Long, Long> turnWayPoint(boolean turnLeft, Pair<Long, Long> currentWayPoint, int turnCount) {
-        Pair<Long, Long> newWayPoint = currentWayPoint;
-        for (int i = 0; i < turnCount; i++) {
-            newWayPoint = turnWayPoint(turnLeft, newWayPoint);
-        }
-        return newWayPoint;
-    }
-
-    private Direction turnShip(boolean turnLeft, Direction currentDirection) {
-        Direction newDirection = currentDirection;
-        switch (currentDirection) {
-            case NORTH:
-                newDirection = turnLeft ? Direction.WEST : Direction.EAST;
-                break;
-            case EAST:
-                newDirection = turnLeft ? Direction.NORTH : Direction.SOUTH;
-                break;
-            case SOUTH:
-                newDirection = turnLeft ? Direction.EAST : Direction.WEST;
-                break;
-            case WEST:
-                newDirection = turnLeft ? Direction.SOUTH : Direction.NORTH;
-                break;
-        }
-        return newDirection;
-    }
-
-    private Pair<Long, Long> turnWayPoint(boolean turnLeft, Pair<Long, Long> currentWayPoint) {
-        long newX = turnLeft ? currentWayPoint.getValue1() : currentWayPoint.getValue1() * -1;
-        long newY = turnLeft ? currentWayPoint.getValue0() * -1 : currentWayPoint.getValue0();
-        return Pair.with(newX, newY);
-    }
-
-    private Pair<Long, Long> moveInDirection(Pair<Long, Long> currentPosition, Direction direction, Integer distance) {
-        switch (direction) {
-            case NORTH:
-                return currentPosition.setAt1(currentPosition.getValue1() - distance);
-            case EAST:
-                return currentPosition.setAt0(currentPosition.getValue0() + distance);
-            case SOUTH:
-                return currentPosition.setAt1(currentPosition.getValue1() + distance);
-            case WEST:
-                return currentPosition.setAt0(currentPosition.getValue0() - distance);
-        }
-        return currentPosition;
+        return Math.abs(EW) + Math.abs(SN);
     }
 
 }

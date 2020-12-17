@@ -3,38 +3,41 @@ package de.beachboys.aoc2020;
 import de.beachboys.Day;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.TreeSet;
 
 public class Day05 extends Day {
 
-    private TreeSet<Integer> seatIds = new TreeSet<>();
+    private int getSeatID(String seat) {
+        int row = Integer.parseInt(seat.substring(0, 7).
+                replaceAll("B", "1").
+                replaceAll("F", "0"), 2);
+        int col = Integer.parseInt(seat.substring(7).
+                replaceAll("R", "1").
+                replaceAll("L", "0"), 2);
+        return row * 8 + col;
+    }
 
     public Object part1(List<String> input) {
-        buildSeatIdTreeMap(input);
-
-        return seatIds.last();
+        int max = 0;
+        for (String seat : input) {
+            int seatID = getSeatID(seat);
+            if (max < (seatID))
+                max = seatID;
+        }
+        return max;
     }
 
     public Object part2(List<String> input) {
-        buildSeatIdTreeMap(input);
-
-        int oldSeatId = Integer.MIN_VALUE;
-        for (Integer currentSeatId : seatIds) {
-            if ((oldSeatId + 2) == currentSeatId) {
-                return currentSeatId - 1;
-            }
-            oldSeatId = currentSeatId;
+        TreeSet<Integer> allSeats = new TreeSet<>();
+        for (String seat : input) {
+            allSeats.add(getSeatID(seat));
         }
-        return Integer.MIN_VALUE;
-    }
-
-    private void buildSeatIdTreeMap(List<String> input) {
-        for (String seatString : input) {
-            String binaryString = seatString.replaceAll("F", "0").replaceAll("B", "1")
-                    .replaceAll("L", "0").replaceAll("R", "1");
-            seatIds.add(Integer.parseInt(binaryString, 2));
+        for (int i = allSeats.first()+1; i < allSeats.last()-1; i++) {
+            if (!allSeats.contains(i) && allSeats.contains(i-1) && allSeats.contains(i+1))
+                return i;
         }
-        io.logDebug(seatIds);
+        return -1;
     }
 
 }

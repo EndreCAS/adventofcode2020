@@ -2,109 +2,155 @@ package de.beachboys.aoc2020;
 
 import de.beachboys.Day;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Predicate;
 
 public class Day04 extends Day {
 
+    private boolean validatePassport(String passport) {
+        return passport.contains("byr") &&
+               passport.contains("iyr") &&
+               passport.contains("eyr") &&
+               passport.contains("hgt") &&
+               passport.contains("hcl") &&
+               passport.contains("ecl") &&
+               passport.contains("pid");
+    }
+
+    private boolean isNotBetween(String value, int min, int max) {
+        try {
+            int y = Integer.parseInt(value);
+            return y < min || y > max;
+        } catch (NumberFormatException e) {
+            return true;
+        }
+    }
+
+    private boolean checkEcl(String ecl) {
+        String[] validColors = {"amb", "blu", "brn", "gry", "grn", "hzl", "oth"};
+        for (String col : validColors) {
+            if (ecl.equals(col)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+//    byr (Birth Year) - four digits; at least 1920 and at most 2002.
+//    iyr (Issue Year) - four digits; at least 2010 and at most 2020.
+//    eyr (Expiration Year) - four digits; at least 2020 and at most 2030.
+//    hgt (Height) - a number followed by either cm or in:
+//      - If cm, the number must be at least 150 and at most 193.
+//      - If in, the number must be at least 59 and at most 76.
+//    hcl (Hair Color) - a # followed by exactly six characters 0-9 or a-f.
+//    ecl (Eye Color) - exactly one of: amb blu brn gry grn hzl oth.
+//    pid (Passport ID) - a nine-digit number, including leading zeroes.
+//    cid (Country ID) - ignored, missing or not.
+    private boolean validatePassportFields(String passport) {
+        if (!validatePassport(passport)) {
+            return false;
+        }
+        try {
+            String[] fields = passport.split("\\s");
+            for (String field : fields) {
+                String[] kv = field.split(":");
+                String key = kv[0];
+                String value = kv[1];
+
+                switch (key) {
+                    case "byr":
+                        if (isNotBetween(value, 1920, 2002))
+                            return false;
+                        break;
+                    case "iyr":
+                        if (isNotBetween(value, 2010, 2020))
+                            return false;
+                        break;
+                    case "eyr":
+                        if (isNotBetween(value, 2020, 2030))
+                            return false;
+                        break;
+                    case "hgt":
+                        String height = value.substring(0, value.length() - 2);
+                        if (value.contains("in")) {
+                            if (isNotBetween(height, 59, 76))
+                                return false;
+                        } else if (value.contains("cm")) {
+                            if (isNotBetween(height, 150, 193))
+                                return false;
+                        } else {
+                            return false;
+                        }
+                        break;
+                    case "hcl":
+                        if (!value.startsWith("#") || value.length() != 7) {
+                            return false;
+                        }
+                        Integer.parseInt(value.substring(1), 16);
+                        break;
+                    case "ecl":
+                        if (!checkEcl(value))
+                            return false;
+                        break;
+                    case "pid":
+                        if (value.length() != 9) {
+                            return false;
+                        }
+                        Integer.parseInt(value);
+                        break;
+                }
+            }
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private List<String> createPassports(List<String> input) {
+        StringBuilder passport = new StringBuilder();
+        StringBuilder allPassports = new StringBuilder();
+        for (int i = 0; i < input.size(); i++) {
+            String passportLine = input.get(i);
+            if (passportLine.length() != 0) {
+                if (passport.length()>0) {
+                    passport.append(" ");
+                }
+                passport.append(passportLine);
+            }
+            if (passportLine.length() == 0 || (i == input.size()-1)) {
+                if (allPassports.length()>0) {
+                    allPassports.append(".");
+                }
+                allPassports.append(passport);
+                passport = new StringBuilder();
+            }
+        }
+
+        return Arrays.asList(allPassports.toString().split("\\."));
+    }
+
     public Object part1(List<String> input) {
-        List<Map<String, String>> passports = buildPassportList(input);
-        return countValidPassports(passports, this::isValidPart1);
+        List<String> passports = createPassports(input);
+        int counter = 0;
+        for(String passport: passports) {
+            if (validatePassport(passport)) {
+                counter++;
+            }
+        }
+        return counter;
     }
 
     public Object part2(List<String> input) {
-        List<Map<String, String>> passports = buildPassportList(input);
-        return countValidPassports(passports, this::isValidPart2);
-    }
+        List<String> passports = createPassports(input);
+        int counter = 0;
 
-    private long countValidPassports(List<Map<String, String>> passports, Predicate<Map<String, String>> isValidChecker) {
-        return passports.stream().filter(isValidChecker).count();
-    }
-
-    private List<Map<String, String>> buildPassportList(List<String> input) {
-        List<Map<String, String>> passports = new ArrayList<>();
-        Map<String, String> currentPassport = new HashMap<>();
-        for (String line : input) {
-            if (line.isBlank()) {
-                passports.add(currentPassport);
-                currentPassport = new HashMap<>();
-            } else {
-                String[] values = line.split(" ");
-                for (String value : values) {
-                    String[] pair = value.split(":");
-                    currentPassport.put(pair[0], pair[1]);
-                }
+        for (String s : passports) {
+            if (validatePassportFields(s)) {
+                counter++;
             }
         }
-        passports.add(currentPassport);
-        return passports;
-    }
-
-    private boolean isValidPart1(Map<String, String> passport) {
-        return passport.containsKey("byr") && passport.containsKey("iyr") && passport.containsKey("eyr")
-                && passport.containsKey("hgt") && passport.containsKey("hcl") && passport.containsKey("ecl") && passport.containsKey("pid");
-    }
-
-    private boolean isValidPart2(Map<String, String> passport) {
-        return checkYear(passport.get("byr"), 1920, 2002) && checkYear(passport.get("iyr"), 2010, 2020) && checkYear(passport.get("eyr"), 2020, 2030)
-                && checkHeight(passport.get("hgt")) && checkHairColor(passport.get("hcl")) && checkEyeColor(passport.get("ecl")) && checkPassportId(passport.get("pid"));
-    }
-
-    private boolean checkYear(String yearAsString, int min, int max) {
-        if (yearAsString == null) {
-            return false;
-        }
-        try {
-            int yearAsInt = Integer.parseInt(yearAsString);
-            return yearAsInt >= min && yearAsInt <= max;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
-
-    private boolean checkHeight(String heightAsString) {
-        if (heightAsString == null) {
-            return false;
-        }
-        try {
-            String heightWithoutUnit = heightAsString.substring(0, heightAsString.length() - 2);
-            int heightAsInt = Integer.parseInt(heightWithoutUnit);
-            String unit = heightAsString.substring(heightAsString.length() - 2);
-            switch (unit) {
-                case "in":
-                    return heightAsInt >= 59 && heightAsInt <= 76;
-                case "cm":
-                    return heightAsInt >= 150 && heightAsInt <= 193;
-                default:
-                    return false;
-            }
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
-
-    private boolean checkHairColor(String hairColor) {
-        return hairColor != null && hairColor.matches("#[0-9a-f]{6}");
-    }
-
-    private boolean checkEyeColor(String eyeColor) {
-        return "amb".equals(eyeColor) || "blu".equals(eyeColor) || "brn".equals(eyeColor)
-                || "gry".equals(eyeColor) || "grn".equals(eyeColor) || "hzl".equals(eyeColor) || "oth".equals(eyeColor);
-    }
-
-    private boolean checkPassportId(String passportId) {
-        if (passportId == null) {
-            return false;
-        }
-        try {
-            int passportIdAsInt = Integer.parseInt(passportId);
-            return passportId.length() == 9 && passportIdAsInt > 0;
-        } catch (NumberFormatException e) {
-            return false;
-        }
+        return counter;
     }
 
 }
