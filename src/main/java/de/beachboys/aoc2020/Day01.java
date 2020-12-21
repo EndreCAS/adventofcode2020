@@ -4,14 +4,12 @@ import de.beachboys.Day;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Day01 extends Day {
 
     public Object part1(List<String> input) {
-        List<Integer> intList = new LinkedList<>();
-        for (String s : input) {
-            intList.add(Integer.valueOf(s));
-        }
+        List<Integer> intList = input.stream().map(Integer::valueOf).collect(Collectors.toCollection(LinkedList::new));
 
         for (int i = 0; i < intList.size(); i++) {
             for (int j = i + 1; j < intList.size(); j++) {
@@ -24,10 +22,7 @@ public class Day01 extends Day {
     }
 
     public Object part2(List<String> input) {
-        List<Integer> intList = new LinkedList<>();
-        for (String s : input) {
-            intList.add(Integer.valueOf(s));
-        }
+        List<Integer> intList = input.stream().map(Integer::valueOf).collect(Collectors.toCollection(LinkedList::new));
 
         for (int i = 0; i < intList.size(); i++) {
             for (int j = i + 1; j < intList.size(); j++) {
