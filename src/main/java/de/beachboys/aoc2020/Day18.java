@@ -19,9 +19,27 @@ public class Day18 extends Day {
         return result;
     }
 
+    private long eval2(String expr) {
+        String[] mult = expr.split("\\s\\*\\s");
+        long result = 1;
+        for (String s : mult) {
+            if (s.contains("+")) {
+                String[] add = s.split("\\s\\+\\s");
+                long sum = 0;
+                for (String value : add) {
+                    sum += Long.valueOf(value);
+                }
+                result *= sum;
+            } else {
+                result *= Long.valueOf(s);
+            }
+        }
+        return result;
+    }
+
     private long evalParenth(String expr) {
         if (!expr.contains("(")) {
-            return eval(expr);
+            return eval2(expr);
         }
 
         StringBuilder sb = new StringBuilder(expr);
@@ -36,32 +54,15 @@ public class Day18 extends Day {
             }
         }
         String parenthesed = expr.substring(openIndex, closeIndex+1);
-        long newValue = eval(parenthesed.substring(1, parenthesed.length()-1));
+        long newValue = eval2(parenthesed.substring(1, parenthesed.length()-1));
         String newExpr = expr.replace(parenthesed, Long.toString(newValue));
         return evalParenth(newExpr);
     }
 
     public Object part1(List<String> input) {
-//        System.out.println(evalParenth("8 + (4 + 2 * 2 * 2 + 5) + 2 + (7 * (7 + 7 + 7 + 7) + 7 + 2) * ((8 + 9 * 6 + 6 * 5) + 6 + 7 * 4 * (3 + 8 * 6 + 5 + 3 * 6) * 7) * 5"));
-//        System.out.println(evalParenth("1 + 2 * 3 + 4 * 5 + 6"));
-//        System.out.println(evalParenth("1 + (2 * 3) + (4 * (5 + 6))"));
-//        System.out.println(evalParenth("2 * 3 + (4 * 5)"));
-//        System.out.println(evalParenth("5 + (8 * 3 + 9 + 3 * 4 * 3)"));
-//        System.out.println(evalParenth("5 * 9 * (7 * 3 * 3 + 9 * 3 + (8 + 6 * 4))"));
-//        System.out.println(evalParenth("((2 + 4 * 9) * (6 + 9 * 8 + 6) + 6) + 2 + 4 * 2"));
-
-        long sum = 0;
-        for (String s : input) {
-            sum += evalParenth(s);
-            System.out.println(evalParenth(s));
-        }
-
-
-        return sum;
+        return input.stream().mapToLong(this::evalParenth).sum();
     }
 
-    public Object part2(List<String> input) {
-        return 2;
-    }
+    public Object part2(List<String> input) { return 2; }
 
 }
